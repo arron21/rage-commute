@@ -5,6 +5,7 @@
     { "file": "shit.mp3", "label": "SHIT!" },
     { "file": "piss.mp3", "label": "PISS!" },
     { "file": "holy-shit.mp3", "label": "HOLY SHIT!" },
-    { "file": "holy-shit-piss.mp3", "label": "HOLY SHIT PISS!" }
+    { "file": "holy-shit-piss.mp3", "label": "HOLY SHIT PISS!" },
+    { "file": "motherfucker.mp3", "label": "MOTHERFUCKER!" }
   ]
 }

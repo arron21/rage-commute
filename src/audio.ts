@@ -8,6 +8,7 @@ const DEFAULT_BUILTIN_SWEARS: { name: string; url: string }[] = [
   { name: 'PISS!', url: './audio/swears/piss.mp3' },
   { name: 'HOLY SHIT!', url: './audio/swears/holy-shit.mp3' },
   { name: 'HOLY SHIT PISS!', url: './audio/swears/holy-shit-piss.mp3' },
+  { name: 'MOTHERFUCKER!', url: './audio/swears/motherfucker.mp3' },
 ];
 
 export class SwearAudioManager {
