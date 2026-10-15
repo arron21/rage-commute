@@ -30,15 +30,13 @@ export class SwearAudioManager {
 
   private async loadStaticFolderManifest(): Promise<void> {
     try {
-      const baseUrl = import.meta.env.BASE_URL || './';
-      const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-      const res = await fetch(`${normalizedBase}audio/swears/manifest.json`);
+      const res = await fetch('./audio/swears/manifest.json');
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.files)) {
           this.folderAudioUrls = data.files.map((filename: string) => ({
             name: filename.replace(/\.[^/.]+$/, '').toUpperCase(),
-            url: `${normalizedBase}audio/swears/${filename}`,
+            url: `./audio/swears/${filename}`,
           }));
         }
       }
