@@ -30,8 +30,6 @@ async function bootstrap() {
   const hudBp = document.getElementById('hud-bp')!;
   const hudFine = document.getElementById('hud-fine')!;
   const hudCombo = document.getElementById('hud-combo')!;
-  const rageBarFill = document.getElementById('rage-bar-fill')!;
-  const rageMeterLabel = document.getElementById('rage-meter-label')!;
   const hudSwears = document.getElementById('hud-swears')!;
   const hudScore = document.getElementById('hud-score')!;
   const hudBest = document.getElementById('hud-best')!;
@@ -60,7 +58,6 @@ async function bootstrap() {
   // Touch Controls
   const touchJump = document.getElementById('touch-jump')!;
   const touchSlide = document.getElementById('touch-slide')!;
-  const touchDash = document.getElementById('touch-dash')!;
 
   // Initialize Game Instance
   const game = new CommuterRageGame(canvas, audio, saveData, {
@@ -73,29 +70,11 @@ async function bootstrap() {
           : '3. SUBWAY MADNESS';
       hudBp.textContent = hud.bloodPressure;
       hudFine.textContent = `$${hud.totalFine.toLocaleString()}`;
-      hudCombo.textContent = `x${hud.combo} COMBO`;
+      hudCombo.textContent = `x${hud.combo}`;
       hudSwears.textContent = `${hud.swearsCount}`;
       hudScore.textContent = `${hud.score.toLocaleString()}`;
       hudBest.textContent = `${hud.highScore.toLocaleString()}`;
       skinCoffeeCountEl.textContent = `${hud.coffeeBeans}`;
-
-      if (hud.isRageDashing) {
-        rageBarFill.style.width = '100%';
-        rageBarFill.classList.add('ready');
-        touchDash.classList.add('ready');
-        rageMeterLabel.textContent = '🔥 UNHINGED RAGE DASH ACTIVE! SMASH EVERYTHING! 🔥';
-      } else {
-        rageBarFill.style.width = `${hud.rageMeter}%`;
-        if (hud.rageMeter >= 100) {
-          rageBarFill.classList.add('ready');
-          touchDash.classList.add('ready');
-          rageMeterLabel.textContent = '⚡ RAGE FULL! TAP DASH OR PRESS [E] / [SHIFT]! ⚡';
-        } else {
-          rageBarFill.classList.remove('ready');
-          touchDash.classList.remove('ready');
-          rageMeterLabel.textContent = 'RAGE DASH METER (CLEAR OBSTACLES & SWEAR TO FILL)';
-        }
-      }
     },
     onGameOver: (stats: ReceiptStats) => {
       writeSaveData(saveData);
@@ -364,9 +343,6 @@ async function bootstrap() {
     } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
       e.preventDefault();
       game.setSlide(true);
-    } else if (e.code === 'KeyE' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
-      e.preventDefault();
-      game.triggerRageDash();
     }
   });
 
@@ -378,7 +354,7 @@ async function bootstrap() {
     }
   });
 
-  // Canvas Touch / Swipe & Pointer Controls (Tap to Jump, Swipe Down to Slide/Fast-Drop!)
+  // Canvas Touch / Swipe & Pointer Controls (Tap to Jump, Swipe Down to Slide!)
   let touchStartY: number | null = null;
   let isSwipingSlide = false;
 
@@ -449,13 +425,6 @@ async function bootstrap() {
   };
   touchSlide.addEventListener('pointerup', endSlideBtn);
   touchSlide.addEventListener('pointercancel', endSlideBtn);
-
-  touchDash.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    audio.unlockAudioOnGesture();
-    game.triggerRageDash();
-  });
 }
 
 bootstrap();

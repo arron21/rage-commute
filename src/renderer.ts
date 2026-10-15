@@ -17,7 +17,6 @@ export interface PlayerRenderState {
   isSliding: boolean;
   isSwearing: boolean;
   swearTimer: number;
-  isRageDashing: boolean;
   runCycle: number;
   combo: number;
   skin: SkinConfig;
@@ -36,18 +35,13 @@ export class ComicRenderer {
     height: number,
     groundY: number,
     scrollX: number,
-    zone: ZoneId,
-    isRageDashing: boolean
+    zone: ZoneId
   ): void {
     const ctx = this.ctx;
 
     // 1. Sky / Background Gradient per Zone
     const grad = ctx.createLinearGradient(0, 0, 0, groundY);
-    if (isRageDashing) {
-      grad.addColorStop(0, '#450a0a');
-      grad.addColorStop(0.5, '#991b1b');
-      grad.addColorStop(1, '#f97316');
-    } else if (zone === 'suburb') {
+    if (zone === 'suburb') {
       grad.addColorStop(0, '#38bdf8');
       grad.addColorStop(0.6, '#bae6fd');
       grad.addColorStop(1, '#fef08a');
@@ -63,22 +57,6 @@ export class ComicRenderer {
     }
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, width, groundY);
-
-    // Comic Halftone / Action Speed Lines when fast or Rage Dashing
-    if (isRageDashing) {
-      ctx.save();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
-      ctx.lineWidth = 4;
-      for (let i = 0; i < 14; i++) {
-        const ly = ((i * 37 + scrollX * 0.8) % groundY);
-        const lx = ((i * 193 - scrollX * 3.5) % width + width) % width;
-        ctx.beginPath();
-        ctx.moveTo(lx, ly);
-        ctx.lineTo(lx + 160, ly);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
 
     // 2. Far Parallax City / Suburb Silhouette
     this.drawFarParallax(width, groundY, scrollX * 0.2, zone);
@@ -219,19 +197,6 @@ export class ComicRenderer {
       ctx.rotate(0.1);
     }
 
-    // Rage Dash Fiery Aura
-    if (p.isRageDashing) {
-      ctx.save();
-      ctx.fillStyle = 'rgba(239, 68, 68, 0.38)';
-      ctx.strokeStyle = '#facc15';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, p.width * 0.95, p.height * 0.75, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.restore();
-    }
-
     const legSwing = p.isGrounded && !p.isSliding ? Math.sin(p.runCycle * 0.35) * 18 : 14;
 
     ctx.lineWidth = 3.5;
@@ -295,7 +260,7 @@ export class ComicRenderer {
     ctx.stroke();
 
     // Head (turns redder as Rage Combo increases or when swearing!)
-    const rageTint = p.isSwearing || p.combo >= 4 || p.isRageDashing;
+    const rageTint = p.isSwearing || p.combo >= 4;
     ctx.fillStyle = rageTint ? '#fca5a5' : p.skin.skinTone;
     ctx.beginPath();
     ctx.roundRect(-15, -44, 32, 30, 10);
@@ -316,7 +281,7 @@ export class ComicRenderer {
     ctx.stroke();
 
     // Popping Forehead Anger Vein when swearing or high combo!
-    if (p.isSwearing || p.combo >= 2 || p.isRageDashing) {
+    if (p.isSwearing || p.combo >= 2) {
       ctx.save();
       ctx.strokeStyle = '#dc2626';
       ctx.lineWidth = 2.5;
@@ -341,7 +306,7 @@ export class ComicRenderer {
     ctx.stroke();
 
     // Bloodshot Pupils
-    ctx.fillStyle = p.isSwearing || p.isRageDashing ? '#dc2626' : '#09090b';
+    ctx.fillStyle = p.isSwearing ? '#dc2626' : '#09090b';
     ctx.beginPath();
     ctx.arc(5.5, -33, 2.2, 0, Math.PI * 2);
     ctx.arc(15, -33, 2.0, 0, Math.PI * 2);
@@ -356,7 +321,7 @@ export class ComicRenderer {
     ctx.stroke();
 
     // Mouth: Giant Wide-Open Screaming Mouth when swearing!
-    if (p.isSwearing || p.isRageDashing || p.crashed) {
+    if (p.isSwearing || p.crashed) {
       ctx.fillStyle = '#7f1d1d';
       ctx.beginPath();
       ctx.roundRect(1, -26, 17, 12, 4);

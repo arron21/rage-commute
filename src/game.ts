@@ -20,8 +20,6 @@ export interface GameHUDCallbacks {
     swearsCount: number;
     totalFine: number;
     combo: number;
-    rageMeter: number;
-    isRageDashing: boolean;
     coffeeBeans: number;
     zone: ZoneId;
     bloodPressure: string;
@@ -68,16 +66,13 @@ export class CommuterRageGame {
   private jumpHoldTimer: number = 0;
   private runCycle: number = 0;
 
-  // Swear & Rage Mechanics
+  // Swear & Combo Mechanics
   private isSwearing: boolean = false;
   private swearAnimTimer: number = 0;
   private swearsCount: number = 0;
   private totalFine: number = 0;
   private combo: number = 0;
   private peakCombo: number = 0;
-  private rageMeter: number = 0; // 0 to 100
-  private isRageDashing: boolean = false;
-  private rageDashTimer: number = 0;
   private swearLog: SwearLogItem[] = [];
 
   // Score & Progression
@@ -156,9 +151,6 @@ export class CommuterRageGame {
     this.totalFine = 0;
     this.combo = 0;
     this.peakCombo = 0;
-    this.rageMeter = 0;
-    this.isRageDashing = false;
-    this.rageDashTimer = 0;
     this.runCoffeeCollected = 0;
     this.currentZone = 'suburb';
     this.swearLog = [];
@@ -244,29 +236,7 @@ export class CommuterRageGame {
     }
   }
 
-  triggerRageDash(): void {
-    if (!this.isRunning || this.isGameOver) return;
-    if (this.rageMeter < 100 || this.isRageDashing) return;
-
-    this.isRageDashing = true;
-    this.rageDashTimer = 4.5; // 4.5 seconds of unstoppable profanity fury!
-    this.rageMeter = 0;
-    this.shakeScreen(0.35, 10);
-    this.audio.playRageDashSound();
-
-    // Big comic announcement bubble
-    this.spawnSwearBubble(
-      'UNHINGED RAGE DASH!!',
-      'INVINCIBLE FOR 4.5s!',
-      this.playerX + 60,
-      this.playerY - 40,
-      '#ef4444',
-      3
-    );
-    this.emitHud();
-  }
-
-  private update(dt: number, now: number): void {
+  private update(dt: number): void {
     if (!this.isRunning || this.isGameOver) return;
 
     // 1. Zone & Speed Progression
@@ -278,33 +248,14 @@ export class CommuterRageGame {
       this.currentZone = 'subway';
     }
 
-    const targetSpeed = Math.min(this.maxSpeed, this.baseSpeed + this.score * 0.085);
-    const effectiveSpeed = this.isRageDashing ? targetSpeed * 1.45 : targetSpeed;
-    this.speed = effectiveSpeed;
+    this.speed = Math.min(this.maxSpeed, this.baseSpeed + this.score * 0.085);
 
     const moveDist = this.speed * dt;
     this.scrollX += moveDist;
     this.score += moveDist * 0.08 * (1 + Math.min(this.combo, 10) * 0.1);
     this.runCycle += dt * (this.speed / 35);
 
-    // 2. Rage Dash Timer
-    if (this.isRageDashing) {
-      this.rageDashTimer -= dt;
-      if (Math.random() < 0.45) {
-        this.spawnParticles(
-          this.playerX + Math.random() * 30,
-          this.playerY + Math.random() * 60,
-          1,
-          '#facc15',
-          'star'
-        );
-      }
-      if (this.rageDashTimer <= 0) {
-        this.isRageDashing = false;
-      }
-    }
-
-    // 3. Player Vertical Physics
+    // 2. Player Vertical Physics
     if (this.jumpKeyHeld && this.jumpHoldTimer > 0) {
       this.playerVy -= 520 * dt;
       this.jumpHoldTimer -= dt;
@@ -339,7 +290,7 @@ export class CommuterRageGame {
       this.shakeTime -= dt;
     }
 
-    // 4. Obstacle Spawning
+    // 3. Obstacle Spawning
     this.spawnDistanceRemaining -= moveDist;
     if (this.spawnDistanceRemaining <= 0) {
       this.spawnObstacleWave();
@@ -348,7 +299,7 @@ export class CommuterRageGame {
       this.spawnDistanceRemaining = minGap + Math.random() * (maxGap - minGap);
     }
 
-    // 5. Update Obstacles & Check Collisions / Obstacle Clear Swear Trigger!
+    // 4. Update Obstacles & Check Collisions / Obstacle Clear Swear Trigger!
     const playerRight = this.playerX + this.normalWidth - 8;
     const playerLeft = this.playerX + 8;
     const playerTop = this.playerY + 6;
@@ -369,26 +320,15 @@ export class CommuterRageGame {
       const overlapsY = playerBottom > obsTop && playerTop < obsBottom;
 
       if (!obs.hit && overlapsX && overlapsY) {
-        if (this.isRageDashing) {
-          // Smash right through the obstacle during Rage Dash and yell a swear!
-          obs.hit = true;
-          obs.cleared = true;
-          this.onObstacleClearedWithSwear(obs, true);
-          this.spawnParticles(obs.x + obs.width / 2, obs.y + obs.height / 2, 16, '#ef4444', 'star');
-          this.obstacles.splice(i, 1);
-          continue;
-        } else {
-          // Player crashed into obstacle!
-          obs.hit = true;
-          this.handlePlayerCrash(obs);
-          return;
-        }
+        obs.hit = true;
+        this.handlePlayerCrash(obs);
+        return;
       }
 
       // STRICT SWEAR TRIGGER: When the player successfully clears/passes over (or ducks under) an obstacle!
       if (!obs.cleared && !obs.hit && obs.x + obs.width < this.playerX + 10) {
         obs.cleared = true;
-        this.onObstacleClearedWithSwear(obs, false);
+        this.onObstacleClearedWithSwear(obs);
       }
 
       if (obs.x + obs.width < -120) {
@@ -396,7 +336,7 @@ export class CommuterRageGame {
       }
     }
 
-    // 6. Update Collectible Coffee Beans
+    // 5. Update Collectible Coffee Beans
     for (let i = this.coffees.length - 1; i >= 0; i--) {
       const c = this.coffees[i];
       c.x -= moveDist;
@@ -408,7 +348,6 @@ export class CommuterRageGame {
           c.collected = true;
           this.runCoffeeCollected++;
           this.saveData.coffeeBeans++;
-          this.rageMeter = Math.min(100, this.rageMeter + 12);
           this.score += 50;
           this.audio.playCoffeePickup();
           this.spawnParticles(c.x, c.y, 10, '#facc15', 'star');
@@ -420,7 +359,7 @@ export class CommuterRageGame {
       }
     }
 
-    // 7. Update Swear Speech Bubbles
+    // 6. Update Swear Speech Bubbles
     for (let i = this.bubbles.length - 1; i >= 0; i--) {
       const b = this.bubbles[i];
       b.life += dt * 60;
@@ -432,7 +371,7 @@ export class CommuterRageGame {
       }
     }
 
-    // 8. Update Particles
+    // 7. Update Particles
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const pt = this.particles[i];
       pt.life += dt;
@@ -453,7 +392,7 @@ export class CommuterRageGame {
    * Called strictly when the player clears an obstacle!
    * Yells a swear word, spawns an explosive comic speech bubble, increments combo & HR fine!
    */
-  private onObstacleClearedWithSwear(obs: ActiveObstacle, smashedByDash: boolean): void {
+  private onObstacleClearedWithSwear(obs: ActiveObstacle): void {
     this.combo++;
     if (this.combo > this.peakCombo) {
       this.peakCombo = this.combo;
@@ -471,10 +410,6 @@ export class CommuterRageGame {
     this.totalFine += fineAdded;
     this.score += 100 * this.combo;
 
-    if (!this.isRageDashing) {
-      this.rageMeter = Math.min(100, this.rageMeter + 20);
-    }
-
     // Log citation for the HR Swear Jar Receipt
     this.swearLog.push({
       timestamp: Date.now(),
@@ -490,9 +425,7 @@ export class CommuterRageGame {
     // Spawn Explosive Comic Speech Bubble right above the commuter's head
     const bubbleColors = ['#facc15', '#fb923c', '#f87171'];
     const color = bubbleColors[Math.min(2, wordEntry.severity - 1)];
-    const subText = smashedByDash
-      ? `SMASHED! +$${fineAdded} FINE (x${this.combo})`
-      : `+$${fineAdded} HR FINE! (x${this.combo} RAGE)`;
+    const subText = `+$${fineAdded} HR FINE! (x${this.combo} COMBO)`;
 
     this.spawnSwearBubble(
       displayText,
@@ -660,8 +593,8 @@ export class CommuterRageGame {
   }
 
   private getBloodPressureString(): string {
-    const sys = 120 + Math.min(120, this.combo * 12 + (this.isRageDashing ? 40 : 0));
-    const dia = 80 + Math.min(80, this.combo * 8 + (this.isRageDashing ? 25 : 0));
+    const sys = 120 + Math.min(120, this.combo * 12);
+    const dia = 80 + Math.min(80, this.combo * 8);
     return `${sys}/${dia} mmHg`;
   }
 
@@ -672,8 +605,6 @@ export class CommuterRageGame {
       swearsCount: this.swearsCount,
       totalFine: this.totalFine,
       combo: this.combo,
-      rageMeter: Math.floor(this.rageMeter),
-      isRageDashing: this.isRageDashing,
       coffeeBeans: this.saveData.coffeeBeans,
       zone: this.currentZone,
       bloodPressure: this.getBloodPressureString(),
@@ -685,7 +616,7 @@ export class CommuterRageGame {
     this.lastFrameTime = now;
 
     if (this.isRunning && !this.isGameOver) {
-      this.update(dt, now);
+      this.update(dt);
     }
 
     const ctx = this.ctx;
@@ -703,8 +634,7 @@ export class CommuterRageGame {
       this.height,
       this.groundY,
       this.scrollX,
-      this.currentZone,
-      this.isRageDashing
+      this.currentZone
     );
 
     // 2. Collectibles
@@ -728,7 +658,6 @@ export class CommuterRageGame {
       isSliding: this.isSliding,
       isSwearing: this.isSwearing,
       swearTimer: this.swearAnimTimer,
-      isRageDashing: this.isRageDashing,
       runCycle: this.runCycle,
       combo: this.combo,
       skin: this.getSelectedSkin(),

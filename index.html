@@ -78,19 +78,11 @@
               </div>
             </div>
 
-            <div class="hud-center">
-              <div class="rage-meter-wrap">
-                <div class="rage-meter-header">
-                  <span id="rage-meter-label">RAGE DASH METER (PRESS E / SHIFT WHEN FULL)</span>
-                  <span id="hud-combo" class="combo-pill">x0 COMBO</span>
-                </div>
-                <div class="rage-bar-track">
-                  <div id="rage-bar-fill" class="rage-bar-fill" style="width: 0%"></div>
-                </div>
-              </div>
-            </div>
-
             <div class="hud-right">
+              <div class="hud-card">
+                <div class="hud-label">SWEAR COMBO</div>
+                <div id="hud-combo" class="hud-val text-yellow">x0</div>
+              </div>
               <div class="hud-card">
                 <div class="hud-label">SWEARS YELLED</div>
                 <div id="hud-swears" class="hud-val">0</div>
@@ -124,10 +116,6 @@
                   <div><kbd>SWIPE &#8595;</kbd> / <kbd>S</kbd></div>
                   <span>Duck / Slide</span>
                 </div>
-                <div class="ctrl-item">
-                  <div><kbd>DASH BTN</kbd> / <kbd>E</kbd></div>
-                  <span>Activate Rage Dash</span>
-                </div>
               </div>
 
               <div class="hero-actions">
@@ -145,9 +133,6 @@
           <div class="touch-controls">
             <button id="touch-slide" class="touch-btn" aria-label="Duck or Slide">
               &#11015;&#65039; DUCK / SLIDE
-            </button>
-            <button id="touch-dash" class="touch-btn touch-dash-btn" aria-label="Rage Dash">
-              &#9889; RAGE DASH!
             </button>
             <button id="touch-jump" class="touch-btn touch-jump-btn" aria-label="Jump or Double Jump">
               &#11014;&#65039; JUMP / 2X
