@@ -44,9 +44,10 @@ export class CommuterRageGame {
   private height: number = 540;
   private groundY: number = 435;
   private scrollX: number = 0;
-  private speed: number = 430;
-  private baseSpeed: number = 430;
-  private maxSpeed: number = 920;
+  private speed: number = 250;
+  private baseSpeed: number = 250;
+  private maxSpeed: number = 600;
+  private runTimeSeconds: number = 0;
   private shakeTime: number = 0;
   private shakeIntensity: number = 0;
 
@@ -146,6 +147,7 @@ export class CommuterRageGame {
   resetRunState(): void {
     this.scrollX = 0;
     this.speed = this.baseSpeed;
+    this.runTimeSeconds = 0;
     this.score = 0;
     this.swearsCount = 0;
     this.totalFine = 0;
@@ -167,7 +169,7 @@ export class CommuterRageGame {
     this.coffees = [];
     this.bubbles = [];
     this.particles = [];
-    this.spawnDistanceRemaining = 420;
+    this.spawnDistanceRemaining = 460;
     this.isGameOver = false;
   }
 
@@ -239,16 +241,20 @@ export class CommuterRageGame {
   private update(dt: number): void {
     if (!this.isRunning || this.isGameOver) return;
 
-    // 1. Zone & Speed Progression
-    if (this.score < 1200) {
+    this.runTimeSeconds += dt;
+
+    // 1. Zone & Speed Progression (steady, smooth time-based difficulty ramp!)
+    if (this.runTimeSeconds < 45) {
       this.currentZone = 'suburb';
-    } else if (this.score < 2800) {
+    } else if (this.runTimeSeconds < 105) {
       this.currentZone = 'downtown';
     } else {
       this.currentZone = 'subway';
     }
 
-    this.speed = Math.min(this.maxSpeed, this.baseSpeed + this.score * 0.085);
+    // Starts at a comfortable 250 px/s and steadily accelerates by ~2.2 px/s per second of survival
+    // (reaching max speed of 600 px/s after ~2.6 minutes of continuous running)
+    this.speed = Math.min(this.maxSpeed, this.baseSpeed + this.runTimeSeconds * 2.2);
 
     const moveDist = this.speed * dt;
     this.scrollX += moveDist;
@@ -290,12 +296,13 @@ export class CommuterRageGame {
       this.shakeTime -= dt;
     }
 
-    // 3. Obstacle Spawning
+    // 3. Obstacle Spawning (generous early spacing that tightens gradually over time)
     this.spawnDistanceRemaining -= moveDist;
     if (this.spawnDistanceRemaining <= 0) {
       this.spawnObstacleWave();
-      const minGap = Math.max(250, 390 - this.score * 0.025);
-      const maxGap = Math.max(380, 580 - this.score * 0.03);
+      const difficultyProgress = Math.min(1, this.runTimeSeconds / 160);
+      const minGap = 420 - difficultyProgress * 110; // 420px early -> 310px late
+      const maxGap = 640 - difficultyProgress * 150; // 640px early -> 490px late
       this.spawnDistanceRemaining = minGap + Math.random() * (maxGap - minGap);
     }
 
