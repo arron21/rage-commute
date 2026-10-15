@@ -1,4 +1,10 @@
 {
   "description": "Drop your custom .mp3, .wav, or .ogg swear audio files into this folder (public/audio/swears/) and list their filenames in the 'files' array below, OR simply drag-and-drop / record them directly inside the in-game Custom Swear Soundboard drawer!",
-  "files": []
+  "files": [
+    { "file": "shiiit.mp3", "label": "SHIIIIT!" },
+    { "file": "shit.mp3", "label": "SHIT!" },
+    { "file": "piss.mp3", "label": "PISS!" },
+    { "file": "holy-shit.mp3", "label": "HOLY SHIT!" },
+    { "file": "holy-shit-piss.mp3", "label": "HOLY SHIT PISS!" }
+  ]
 }

@@ -2,19 +2,40 @@ import { CensorMode, CustomAudioClip, SwearWordEntry } from './types';
 import { SWEAR_DICTIONARY } from './constants';
 import { getAllStoredAudioClips, saveAudioClipToDB, deleteAudioClipFromDB } from './storage';
 
+const DEFAULT_BUILTIN_SWEARS: { name: string; url: string }[] = [
+  { name: 'SHIIIIT!', url: './audio/swears/shiiit.mp3' },
+  { name: 'SHIT!', url: './audio/swears/shit.mp3' },
+  { name: 'PISS!', url: './audio/swears/piss.mp3' },
+  { name: 'HOLY SHIT!', url: './audio/swears/holy-shit.mp3' },
+  { name: 'HOLY SHIT PISS!', url: './audio/swears/holy-shit-piss.mp3' },
+];
+
 export class SwearAudioManager {
   private ctx: AudioContext | null = null;
   private customClips: CustomAudioClip[] = [];
-  private folderAudioUrls: { name: string; url: string }[] = [];
+  private folderAudioUrls: { name: string; url: string }[] = [...DEFAULT_BUILTIN_SWEARS];
+  private preloadedAudio: Map<string, HTMLAudioElement> = new Map();
   private censorMode: CensorMode = 'uncensored';
   private muted: boolean = false;
   private lastSwearIndex: number = -1;
+  private lastAudioClipIndex: number = -1;
   private mediaRecorder: MediaRecorder | null = null;
   private recordedChunks: Blob[] = [];
 
   async init(): Promise<void> {
     this.customClips = await getAllStoredAudioClips();
     await this.loadStaticFolderManifest();
+    this.preloadFolderClips();
+  }
+
+  private preloadFolderClips(): void {
+    for (const clip of this.folderAudioUrls) {
+      if (!this.preloadedAudio.has(clip.url)) {
+        const a = new Audio(clip.url);
+        a.preload = 'auto';
+        this.preloadedAudio.set(clip.url, a);
+      }
+    }
   }
 
   private ensureContext(): AudioContext {
@@ -33,15 +54,25 @@ export class SwearAudioManager {
       const res = await fetch('./audio/swears/manifest.json');
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data.files)) {
-          this.folderAudioUrls = data.files.map((filename: string) => ({
-            name: filename.replace(/\.[^/.]+$/, '').toUpperCase(),
-            url: `./audio/swears/${filename}`,
-          }));
+        if (Array.isArray(data.files) && data.files.length > 0) {
+          this.folderAudioUrls = data.files.map((item: string | { file: string; label?: string }) => {
+            if (typeof item === 'string') {
+              const label = item.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').toUpperCase();
+              return {
+                name: label.endsWith('!') ? label : `${label}!`,
+                url: `./audio/swears/${item}`,
+              };
+            }
+            const label = (item.label || item.file.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')).toUpperCase();
+            return {
+              name: label.endsWith('!') ? label : `${label}!`,
+              url: `./audio/swears/${item.file}`,
+            };
+          });
         }
       }
     } catch {
-      // Ignore if manifest is absent
+      // Keep DEFAULT_BUILTIN_SWEARS fallback
     }
   }
 
@@ -65,8 +96,17 @@ export class SwearAudioManager {
     return this.customClips;
   }
 
+  getStaticFolderClips(): { name: string; url: string }[] {
+    return this.folderAudioUrls;
+  }
+
   getStaticFolderCount(): number {
     return this.folderAudioUrls.length;
+  }
+
+  previewUrl(url: string): void {
+    if (this.muted) return;
+    this.playAudioUrl(url, 1);
   }
 
   async addUploadedFiles(files: FileList | File[], customLabel?: string): Promise<CustomAudioClip[]> {
@@ -163,7 +203,7 @@ export class SwearAudioManager {
   previewClip(clip: CustomAudioClip): void {
     if (this.muted) return;
     const audio = new Audio(clip.url);
-    audio.volume = 0.9;
+    audio.volume = 0.95;
     audio.play().catch(() => {});
   }
 
@@ -186,7 +226,10 @@ export class SwearAudioManager {
     const entry = SWEAR_DICTIONARY[idx];
 
     const enabledCustom = this.customClips.filter((c) => c.enabled);
-    const hasCustomOrStatic = enabledCustom.length > 0 || this.folderAudioUrls.length > 0;
+    const allVoiceClips: { label: string; url: string }[] = [
+      ...this.folderAudioUrls.map((f) => ({ label: f.name, url: f.url })),
+      ...enabledCustom.map((c) => ({ label: c.label || 'CUSTOM SWEAR!', url: c.url })),
+    ];
 
     let displayText = entry.uncensored;
     if (this.censorMode === 'bleep') {
@@ -195,22 +238,24 @@ export class SwearAudioManager {
       displayText = entry.corporate;
     }
 
+    if (this.censorMode === 'uncensored' && allVoiceClips.length > 0) {
+      let clipIdx = Math.floor(Math.random() * allVoiceClips.length);
+      if (clipIdx === this.lastAudioClipIndex && allVoiceClips.length > 1) {
+        clipIdx = (clipIdx + 1) % allVoiceClips.length;
+      }
+      this.lastAudioClipIndex = clipIdx;
+      const chosen = allVoiceClips[clipIdx];
+      displayText = chosen.label;
+      if (!this.muted) {
+        this.playAudioUrl(chosen.url, comboCount);
+      }
+      return { wordEntry: entry, displayText, usedCustomAudio: true };
+    }
+
     if (!this.muted) {
       if (this.censorMode === 'bleep') {
         // Classic comedy 1000Hz TV Censor Bleep with angry vocal grunt underneath!
         this.playTvCensorBleep(comboCount);
-      } else if (hasCustomOrStatic && this.censorMode === 'uncensored') {
-        // Play user's uploaded custom swear audio or static folder audio!
-        if (enabledCustom.length > 0) {
-          const clip = enabledCustom[Math.floor(Math.random() * enabledCustom.length)];
-          displayText = clip.label || displayText;
-          this.playAudioUrl(clip.url, comboCount);
-        } else {
-          const folderClip = this.folderAudioUrls[Math.floor(Math.random() * this.folderAudioUrls.length)];
-          displayText = `${folderClip.name}!`;
-          this.playAudioUrl(folderClip.url, comboCount);
-        }
-        return { wordEntry: entry, displayText, usedCustomAudio: true };
       } else {
         // Expressive synthesized vocal shout + comic impact!
         this.playSynthRageShout(comboCount, entry.severity);
@@ -220,17 +265,16 @@ export class SwearAudioManager {
     return { wordEntry: entry, displayText, usedCustomAudio: false };
   }
 
-  private playAudioUrl(url: string, comboCount: number): void {
+  private playAudioUrl(url: string, _comboCount: number): void {
     try {
-      const audio = new Audio(url);
-      audio.volume = 0.95;
-      // Slight pitch/playback boost as rage combo escalates, without distorting the clip
-      audio.playbackRate = Math.min(1.22, 1.0 + Math.min(comboCount, 10) * 0.015);
+      const base = this.preloadedAudio.get(url);
+      const audio = base ? (base.cloneNode(true) as HTMLAudioElement) : new Audio(url);
+      audio.volume = 1.0;
       audio.play().catch(() => {
-        this.playSynthRageShout(comboCount, 2);
+        this.playSynthRageShout(1, 2);
       });
     } catch {
-      this.playSynthRageShout(comboCount, 2);
+      this.playSynthRageShout(1, 2);
     }
   }
 

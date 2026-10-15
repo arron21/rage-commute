@@ -144,28 +144,19 @@ async function bootstrap() {
   // Soundboard Drawer Logic
   function renderSoundboardList() {
     const clips = audio.getCustomClips();
-    const staticCount = audio.getStaticFolderCount();
-    const totalCount = clips.length + staticCount;
+    const staticClips = audio.getStaticFolderClips();
+    const totalCount = clips.length + staticClips.length;
     customClipCountEl.textContent = `${totalCount}`;
 
     if (totalCount > 0) {
-      clipStatusNote.textContent = `${totalCount} custom swear clip(s) active in Uncensored Mode!`;
+      clipStatusNote.textContent = `${totalCount} voice swear clip(s) active in Uncensored Mode!`;
     } else {
       clipStatusNote.textContent = 'Using built-in synth rage until custom clips are added';
     }
 
     customClipList.innerHTML = '';
-    if (clips.length === 0) {
-      const emptyEl = document.createElement('div');
-      emptyEl.style.color = '#a1a1aa';
-      emptyEl.style.fontSize = '0.84rem';
-      emptyEl.style.padding = '12px 4px';
-      emptyEl.textContent =
-        'No custom clips uploaded yet. Drop your .mp3/.wav/.ogg swear files above or record with your mic!';
-      customClipList.appendChild(emptyEl);
-      return;
-    }
 
+    // 1. Render user-uploaded / recorded clips
     for (const clip of clips) {
       const row = document.createElement('div');
       row.className = 'clip-row';
@@ -177,7 +168,7 @@ async function bootstrap() {
       label.textContent = `"${clip.label}"`;
       const fname = document.createElement('span');
       fname.className = 'clip-filename';
-      fname.textContent = clip.name;
+      fname.textContent = `${clip.name} (Custom)`;
       info.append(label, fname);
 
       const actions = document.createElement('div');
@@ -197,6 +188,34 @@ async function bootstrap() {
       });
 
       actions.append(btnPlay, btnDel);
+      row.append(info, actions);
+      customClipList.appendChild(row);
+    }
+
+    // 2. Render built-in swear audio files from public/audio/swears/
+    for (const sClip of staticClips) {
+      const row = document.createElement('div');
+      row.className = 'clip-row';
+
+      const info = document.createElement('div');
+      info.className = 'clip-info';
+      const label = document.createElement('span');
+      label.className = 'clip-label';
+      label.textContent = `"${sClip.name}"`;
+      const fname = document.createElement('span');
+      fname.className = 'clip-filename';
+      fname.textContent = `${sClip.url.split('/').pop()} (Built-in Voice Pack)`;
+      info.append(label, fname);
+
+      const actions = document.createElement('div');
+      actions.className = 'clip-actions';
+
+      const btnPlay = document.createElement('button');
+      btnPlay.className = 'comic-btn btn-yellow btn-sm';
+      btnPlay.textContent = '▶ TEST';
+      btnPlay.addEventListener('click', () => audio.previewUrl(sClip.url));
+
+      actions.append(btnPlay);
       row.append(info, actions);
       customClipList.appendChild(row);
     }
