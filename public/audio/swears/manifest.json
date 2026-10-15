@@ -1,0 +1,4 @@
+{
+  "description": "Drop your custom .mp3, .wav, or .ogg swear audio files into this folder (public/audio/swears/) and list their filenames in the 'files' array below, OR simply drag-and-drop / record them directly inside the in-game Custom Swear Soundboard drawer!",
+  "files": []
+}
