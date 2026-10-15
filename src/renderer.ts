@@ -120,15 +120,18 @@ export class ComicRenderer {
   private drawFarParallax(width: number, groundY: number, scroll: number, zone: ZoneId): void {
     const ctx = this.ctx;
     const span = 220;
-    const offset = scroll % span;
+    const startTile = Math.floor(scroll / span) - 1;
+    const totalTiles = Math.ceil(width / span) + 3;
 
     ctx.save();
     ctx.fillStyle = zone === 'suburb' ? '#7dd3fc' : zone === 'downtown' ? '#f43f5e' : '#1e1b4b';
     ctx.strokeStyle = '#09090b';
     ctx.lineWidth = 3;
 
-    for (let x = -offset - span; x < width + span; x += span) {
-      const idx = Math.abs(Math.floor((x + scroll) / span));
+    for (let i = 0; i < totalTiles; i++) {
+      const tileIdx = startTile + i;
+      const x = tileIdx * span - scroll;
+      const idx = ((tileIdx % 12) + 12) % 12;
       const h = 90 + (idx % 4) * 35;
       ctx.fillRect(x + 10, groundY - h, span - 20, h);
       ctx.strokeRect(x + 10, groundY - h, span - 20, h);
@@ -139,14 +142,17 @@ export class ComicRenderer {
   private drawMidParallax(width: number, groundY: number, scroll: number, zone: ZoneId): void {
     const ctx = this.ctx;
     const span = 180;
-    const offset = scroll % span;
+    const startTile = Math.floor(scroll / span) - 1;
+    const totalTiles = Math.ceil(width / span) + 3;
 
     ctx.save();
     ctx.lineWidth = 3.5;
     ctx.strokeStyle = '#09090b';
 
-    for (let x = -offset - span; x < width + span; x += span) {
-      const idx = Math.abs(Math.floor((x + scroll) / span));
+    for (let i = 0; i < totalTiles; i++) {
+      const tileIdx = startTile + i;
+      const x = tileIdx * span - scroll;
+      const idx = ((tileIdx % 12) + 12) % 12;
       if (zone === 'suburb') {
         // Cartoon suburban house + picket fence
         const houseH = 110 + (idx % 2) * 25;
@@ -163,6 +169,11 @@ export class ComicRenderer {
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
+
+        // Window
+        ctx.fillStyle = '#bae6fd';
+        ctx.fillRect(x + 62, groundY - houseH + 22, 36, 28);
+        ctx.strokeRect(x + 62, groundY - houseH + 22, 36, 28);
       } else if (zone === 'downtown') {
         // Storefronts & Office Buildings
         const bldgH = 150 + (idx % 3) * 40;
