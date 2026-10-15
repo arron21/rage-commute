@@ -232,15 +232,10 @@ export class CommuterRageGame {
     this.slideHold = sliding;
     if (!this.isRunning || this.isGameOver) return;
 
-    if (sliding && !this.isSliding) {
+    if (sliding && !this.isSliding && this.isGrounded) {
       this.isSliding = true;
       this.audio.playSlideSound();
-      if (!this.isGrounded) {
-        // Fast-drop slam when ducking mid-air!
-        this.playerVy = Math.max(this.playerVy, 780);
-      } else {
-        this.playerY = this.groundY - this.slideHeight;
-      }
+      this.playerY = this.groundY - this.slideHeight;
     } else if (!sliding && this.isSliding) {
       this.isSliding = false;
       if (this.isGrounded) {
@@ -321,10 +316,14 @@ export class CommuterRageGame {
 
     const currentH = this.getCurrentPlayerHeight();
     if (this.playerY + currentH >= this.groundY) {
-      this.playerY = this.groundY - currentH;
-      this.playerVy = 0;
       this.isGrounded = true;
       this.jumpsUsed = 0;
+      this.playerVy = 0;
+      if (this.slideHold && !this.isSliding) {
+        this.isSliding = true;
+        this.audio.playSlideSound();
+      }
+      this.playerY = this.groundY - this.getCurrentPlayerHeight();
     } else {
       this.isGrounded = false;
     }
