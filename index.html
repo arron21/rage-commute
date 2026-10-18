@@ -9,213 +9,38 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#09090b" />
-    <title>RAGE COMMUTE // The Profanity Infinite Runner</title>
+    <title>RAGE COMMUTE</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Bangers&family=JetBrains+Mono:wght@600;800&family=Plus+Jakarta+Sans:wght@600;800;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bangers&family=JetBrains+Mono:wght@700;800&family=Plus+Jakarta+Sans:wght@700;800;900&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
     <div id="app">
-      <!-- Top Bar: Logo, Censor Mode Switcher, Soundboard & Skin Shop Buttons -->
-      <header class="topbar">
-        <div class="brand">
-          <span class="brand-badge">9:04 AM</span>
-          <h1 class="brand-title">RAGE COMMUTE!</h1>
-          <span class="brand-subtitle">CLEAR OBSTACLES &#8594; YELL SWEARS</span>
-        </div>
+      <div class="canvas-container">
+        <canvas id="game-canvas"></canvas>
 
-        <div class="topbar-controls">
-          <!-- 3-Way Censor Mode Toggle -->
-          <div class="censor-pill-group" role="group" aria-label="Censor Mode">
-            <button class="censor-btn active" data-censor="uncensored" title="Raw Custom Audio + Uncensored Text">
-              &#129324; UNCENSORED
-            </button>
-            <button class="censor-btn" data-censor="bleep" title="Classic 1000Hz TV Bleep + Symbols">
-              &#128250; TV BLEEP
-            </button>
-            <button class="censor-btn" data-censor="corporate" title="HR Approved Safe Mode">
-              &#128188; CORPORATE SFW
-            </button>
+        <!-- Minimal Top Bar Overlay -->
+        <div class="hud-minimal">
+          <div class="score-pill">
+            <span id="hud-score">0</span>
+            <span class="score-best">BEST <span id="hud-best">0</span></span>
           </div>
 
-          <button id="btn-soundboard" class="comic-btn btn-yellow">
-            &#127897;&#65039; SWEAR SOUNDBOARD (<span id="custom-clip-count">0</span>)
-          </button>
-
-          <button id="btn-skins" class="comic-btn btn-cyan">
-            &#128084; COMMUTERS (<span id="skin-coffee-count">0</span> &#9749;)
-          </button>
-
-          <button id="btn-mute" class="comic-btn btn-icon" title="Mute / Unmute Audio">
+          <button id="btn-mute" class="icon-pill" title="Mute / Unmute Audio" aria-label="Toggle Mute">
             &#128266;
           </button>
         </div>
-      </header>
 
-      <!-- Main Game Stage -->
-      <main class="stage-wrapper">
-        <div class="canvas-container">
-          <canvas id="game-canvas"></canvas>
-
-          <!-- Live In-Game HUD Overlay -->
-          <div class="hud-overlay">
-            <div class="hud-left">
-              <div class="hud-card">
-                <div class="hud-label">ZONE</div>
-                <div id="hud-zone" class="hud-val zone-badge">SUBURB CHAOS</div>
-              </div>
-              <div class="hud-card">
-                <div class="hud-label">BLOOD PRESSURE</div>
-                <div id="hud-bp" class="hud-val text-red">120/80 mmHg</div>
-              </div>
-              <div class="hud-card">
-                <div class="hud-label">HR SWEAR JAR FINE</div>
-                <div id="hud-fine" class="hud-val text-yellow">$0</div>
-              </div>
-            </div>
-
-            <div class="hud-right">
-              <div class="hud-card">
-                <div class="hud-label">SWEAR COMBO</div>
-                <div id="hud-combo" class="hud-val text-yellow">x0</div>
-              </div>
-              <div class="hud-card">
-                <div class="hud-label">SWEARS YELLED</div>
-                <div id="hud-swears" class="hud-val">0</div>
-              </div>
-              <div class="hud-card">
-                <div class="hud-label">SCORE / BEST</div>
-                <div class="hud-val">
-                  <span id="hud-score">0</span>
-                  <span class="hud-best">/ <span id="hud-best">0</span></span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Start / Attract Overlay -->
-          <div id="start-overlay" class="stage-overlay">
-            <div class="hero-card">
-              <div class="hero-tag">VIRAL ARCADE RUNNER</div>
-              <h2 class="hero-title">LATE FOR WORK. ZERO FILTER.</h2>
-              <p class="hero-desc">
-                Leap over Lego bricks, Knife Roombas, and runaway coffee carts!
-                <strong>Every single time you successfully clear an obstacle, your commuter screams a swear word!</strong>
-              </p>
-
-              <div class="controls-grid">
-                <div class="ctrl-item">
-                  <div><kbd>TAP</kbd> / <kbd>SPACE</kbd> / <kbd>&#8593;</kbd></div>
-                  <span>Jump &amp; Double-Jump</span>
-                </div>
-                <div class="ctrl-item">
-                  <div><kbd>SWIPE &#8595;</kbd> / <kbd>S</kbd></div>
-                  <span>Duck / Slide</span>
-                </div>
-              </div>
-
-              <div class="hero-actions">
-                <button id="btn-start-run" class="comic-btn btn-red btn-xl">
-                  &#128293; START SPRINTING &amp; SWEARING!
-                </button>
-                <button id="btn-open-soundboard-hero" class="comic-btn btn-yellow">
-                  &#127908; UPLOAD / RECORD YOUR SWEAR AUDIO
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Mobile / Touch On-Screen Controls -->
-          <div class="touch-controls">
-            <button id="touch-slide" class="touch-btn" aria-label="Duck or Slide">
-              &#11015;&#65039; DUCK / SLIDE
-            </button>
-            <button id="touch-jump" class="touch-btn touch-jump-btn" aria-label="Jump or Double Jump">
-              &#11014;&#65039; JUMP / 2X
-            </button>
-          </div>
-        </div>
-      </main>
-
-      <!-- Modal 1: Custom Swear Soundboard Drawer (Upload .mp3/.wav/.ogg or Live Mic Record!) -->
-      <div id="modal-soundboard" class="modal-backdrop hidden">
-        <div class="modal-panel">
-          <div class="modal-header">
-            <h3>&#127897;&#65039; CUSTOM SWEAR SOUNDBOARD</h3>
-            <button id="close-soundboard" class="comic-btn btn-sm">CLOSE &#10005;</button>
-          </div>
-          <p class="modal-sub">
-            Upload your own swear audio files (<code>.mp3</code>, <code>.wav</code>, <code>.ogg</code>, <code>.m4a</code>) or record directly from your microphone! Whenever you clear an obstacle in <strong>Uncensored Mode</strong>, the game randomly yells one of your clips!
-          </p>
-
-          <div class="soundboard-actions">
-            <!-- Drag & Drop / File Picker -->
-            <label id="drop-zone" class="drop-zone">
-              <input id="audio-file-input" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a" multiple hidden />
-              <span class="drop-icon">&#128194;</span>
-              <span class="drop-title">Click or Drag &amp; Drop Audio Files Here</span>
-              <span class="drop-hint">Saved automatically in your browser (or put files in <code>public/audio/swears/</code>)</span>
-            </label>
-
-            <!-- Live Microphone Recorder -->
-            <div class="mic-recorder-box">
-              <input
-                id="mic-label-input"
-                type="text"
-                class="comic-input"
-                placeholder="Bubble text (e.g. HOLY SH*T!)"
-                maxlength="24"
-              />
-              <button id="btn-record-mic" class="comic-btn btn-red">
-                &#128308; HOLD OR CLICK TO RECORD SWEAR
-              </button>
-            </div>
-          </div>
-
-          <div class="clip-list-header">
-            <span>YOUR LOADED SWEAR CLIPS</span>
-            <span id="clip-status-note" class="clip-note">Using built-in synth rage until clips are added</span>
-          </div>
-          <div id="custom-clip-list" class="clip-list"></div>
-        </div>
-      </div>
-
-      <!-- Modal 2: Commuter Personas / Skin Shop -->
-      <div id="modal-skins" class="modal-backdrop hidden">
-        <div class="modal-panel">
-          <div class="modal-header">
-            <h3>&#128084; UNLOCKABLE COMMUTER PERSONAS</h3>
-            <button id="close-skins" class="comic-btn btn-sm">CLOSE &#10005;</button>
-          </div>
-          <p class="modal-sub">
-            Collect Espresso Cups (&#9749;) above obstacles to unlock unhinged commuter personas!
-            Current Balance: <strong id="shop-coffee-balance">0</strong> &#9749;
-          </p>
-          <div id="skin-grid" class="skin-grid"></div>
-        </div>
-      </div>
-
-      <!-- Modal 3: Game Over "HR Swear Jar Citation Receipt" -->
-      <div id="modal-receipt" class="modal-backdrop hidden">
-        <div class="modal-panel receipt-modal-panel">
-          <div class="modal-header">
-            <h3>&#129534; HR SWEAR JAR CITATION</h3>
-            <button id="close-receipt" class="comic-btn btn-sm">&#10005;</button>
-          </div>
-          <div class="receipt-preview-wrap">
-            <canvas id="receipt-canvas"></canvas>
-          </div>
-          <div class="receipt-actions">
-            <button id="btn-play-again" class="comic-btn btn-red btn-lg">
-              &#128260; RUN IT BACK (PLAY AGAIN)
-            </button>
-            <button id="btn-download-receipt" class="comic-btn btn-yellow">
-              &#128248; DOWNLOAD RECEIPT IMAGE
-            </button>
+        <!-- Simple Start / Game Over Prompt -->
+        <div id="start-overlay" class="stage-overlay">
+          <div class="simple-card">
+            <h1 id="overlay-title" class="simple-title">RAGE COMMUTE</h1>
+            <p id="overlay-sub" class="simple-sub">TAP OR PRESS SPACE TO JUMP</p>
+            <button id="btn-start-run" class="play-btn">PLAY</button>
           </div>
         </div>
       </div>

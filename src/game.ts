@@ -124,8 +124,7 @@ export class CommuterRageGame {
 
     const isMobilePortrait = this.width < 600;
     this.playerX = isMobilePortrait ? 68 : 145;
-    // Leave extra room below the sidewalk on mobile for thumb touch buttons
-    this.groundY = Math.floor(this.height * (isMobilePortrait ? 0.78 : 0.81));
+    this.groundY = Math.floor(this.height * 0.82);
 
     if (this.isGrounded && !this.isRunning) {
       this.playerY = this.groundY - this.getCurrentPlayerHeight();
@@ -432,11 +431,10 @@ export class CommuterRageGame {
     // Spawn Explosive Comic Speech Bubble right above the commuter's head
     const bubbleColors = ['#facc15', '#fb923c', '#f87171'];
     const color = bubbleColors[Math.min(2, wordEntry.severity - 1)];
-    const subText = `+$${fineAdded} HR FINE! (x${this.combo} COMBO)`;
 
     this.spawnSwearBubble(
       displayText,
-      subText,
+      '',
       this.playerX + 75,
       Math.max(65, this.playerY - 28),
       color,
@@ -466,11 +464,11 @@ export class CommuterRageGame {
         ? 'UNACCEPTABLE KPI!!'
         : censor === 'bleep'
         ? '@#$%&*!! BLEEP!!'
-        : 'MOTHERF*CKING SH*T!!';
+        : 'MOTHERF*CKER!!';
 
     this.spawnSwearBubble(
       crashWord,
-      `TRIPPED ON ${obs.template.name.toUpperCase()}!`,
+      '',
       this.playerX + 90,
       Math.max(70, this.playerY - 25),
       '#ef4444',
@@ -486,7 +484,6 @@ export class CommuterRageGame {
 
     this.emitHud();
 
-    // Render one final frame with the crash bubble & particles, then show Swear Jar Receipt
     setTimeout(() => {
       this.callbacks.onGameOver({
         score: finalScore,
@@ -500,7 +497,7 @@ export class CommuterRageGame {
         swearLog: this.swearLog,
         commuterName: this.getSelectedSkin().name,
       });
-    }, 550);
+    }, 450);
   }
 
   private spawnObstacleWave(): void {
@@ -525,18 +522,6 @@ export class CommuterRageGame {
       hit: false,
       animPhase: 0,
     });
-
-    // 55% chance to spawn an Espresso Cup above the obstacle to reward jumping!
-    if (Math.random() < 0.55) {
-      this.coffees.push({
-        id: this.nextEntityId++,
-        x: this.width + 60 + template.width / 2,
-        y: template.isOverhead ? this.groundY - 24 : obsY - 58,
-        radius: 14,
-        collected: false,
-        bobOffset: Math.random() * Math.PI * 2,
-      });
-    }
   }
 
   private spawnSwearBubble(
